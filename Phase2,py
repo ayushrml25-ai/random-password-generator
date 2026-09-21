@@ -1,0 +1,169 @@
+import secrets
+import string
+
+
+class PasswordGenerator:
+
+    def __init__(self):
+        self.uppercase = string.ascii_uppercase
+        self.lowercase = string.ascii_lowercase
+        self.numbers = string.digits
+        self.symbols = "!@#$%^&*()-_=+[]{}<>?"
+
+    def get_character_set(self, upper, lower, numbers, symbols):
+        characters = ""
+
+        if upper:
+            characters += self.uppercase
+
+        if lower:
+            characters += self.lowercase
+
+        if numbers:
+            characters += self.numbers
+
+        if symbols:
+            characters += self.symbols
+
+        return characters
+
+    def generate_password(self, length, upper, lower, numbers, symbols):
+
+        if length < 4:
+            return None, "Password length must be at least 4."
+
+        selected = []
+
+        if upper:
+            selected.append(self.uppercase)
+
+        if lower:
+            selected.append(self.lowercase)
+
+        if numbers:
+            selected.append(self.numbers)
+
+        if symbols:
+            selected.append(self.symbols)
+
+        if not selected:
+            return None, "Select at least one character type."
+
+        if length < len(selected):
+            return None, "Length is too small for selected character types."
+
+        # One character from every selected category
+        password = [
+            secrets.choice(character_set)
+            for character_set in selected
+        ]
+
+        # Remaining characters
+        all_characters = self.get_character_set(
+            upper, lower, numbers, symbols
+        )
+
+        for _ in range(length - len(password)):
+            password.append(secrets.choice(all_characters))
+
+        # Secure shuffle
+        for i in range(len(password) - 1, 0, -1):
+            j = secrets.randbelow(i + 1)
+            password[i], password[j] = password[j], password[i]
+
+        return ''.join(password), "Success"
+
+    def check_strength(self, password):
+
+        score = 0
+
+        if len(password) >= 8:
+            score += 1
+
+        if len(password) >= 12:
+            score += 1
+
+        if any(c.isupper() for c in password):
+            score += 1
+
+        if any(c.islower() for c in password):
+            score += 1
+
+        if any(c.isdigit() for c in password):
+            score += 1
+
+        if any(c in self.symbols for c in password):
+            score += 1
+
+        if score <= 2:
+            return "Weak"
+
+        elif score <= 4:
+            return "Medium"
+
+        else:
+            return "Strong"
+
+
+def get_yes_no(message):
+
+    while True:
+        answer = input(message).lower()
+
+        if answer in ['y', 'n']:
+            return answer == 'y'
+
+        print("Please enter only Y or N.")
+
+
+def main():
+
+    generator = PasswordGenerator()
+
+    print("=" * 50)
+    print("       RANDOM PASSWORD GENERATOR")
+    print("=" * 50)
+
+    while True:
+
+        try:
+            length = int(input("\nEnter password length: "))
+
+            upper = get_yes_no("Include uppercase letters? (Y/N): ")
+            lower = get_yes_no("Include lowercase letters? (Y/N): ")
+            numbers = get_yes_no("Include numbers? (Y/N): ")
+            symbols = get_yes_no("Include special symbols? (Y/N): ")
+
+            password, message = generator.generate_password(
+                length,
+                upper,
+                lower,
+                numbers,
+                symbols
+            )
+
+            if password is None:
+                print("\nError:", message)
+                continue
+
+            print("\n" + "-" * 50)
+            print("Generated Password :", password)
+            print("Password Length    :", len(password))
+            print("Password Strength  :", generator.check_strength(password))
+            print("-" * 50)
+
+            again = get_yes_no("\nGenerate another password? (Y/N): ")
+
+            if not again:
+                print("\nThank you for using Password Generator!")
+                break
+
+        except ValueError:
+            print("\nError: Please enter a valid numeric length.")
+
+        except Exception as e:
+            print("\nUnexpected error:", e)
+
+
+if __name__ == "__main__":
+    main()
